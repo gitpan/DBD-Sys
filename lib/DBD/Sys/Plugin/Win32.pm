@@ -1,42 +1,58 @@
-package DBD::Sys::Plugin::Meta;
+package DBD::Sys::Plugin::Win32;
 
 use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = 0.02;
 
-#################### main pod documentation start ###################
+use base qw(DBD::Sys::Plugin);
+
+$VERSION = "0.02";
+
+sub getPriority() { return 500; }
 
 =head1 NAME
 
-DBD::Sys::Plugin::Meta - provides tables with meta information about DBD::Sys.
+DBD::Sys::Plugin::Win32 - provides tables B<available on Windows only>.
 
-=head1 TABLES
+=head1 DESCRIPTION
 
-Provided tables:
+On Windows this module provides following tables:
 
 =over 8
 
-=item alltables
+=item pwent
 
-Table containing the list of available tables. See
-L<DBD::Sys::Plugin::Meta::AllTables> for details.
+Table containing user information.
+
+=item grent
+
+Table containing group information
+
+=item procs
+
+Table containing process information
 
 =back
 
 =head1 PREREQUISITES
 
+This plugin only works on Windows.
+
 =head1 BUGS & LIMITATIONS
 
 No known bugs at this moment.
+
+The implementation of L<Proc::ProcessTable> is very limited for several
+platforms and should improved. L<Net::Interface> lacks MSWin32 support
+and needs help porting from autoconf to hints framework.
 
 =head1 AUTHOR
 
     Jens Rehsack			Alexander Breibach
     CPAN ID: REHSACK
     rehsack@cpan.org			alexander.breibach@googlemail.com
-    http://www.rehsack.de/
+    http://www.rehsack.de/		http://...
 
 =head1 COPYRIGHT
 
@@ -57,15 +73,5 @@ Business and commercial support should be aquired from the authors via
 preferred freelancer agencies.
 
 =cut
-
-#################### main pod documentation end ###################
-
-require DBD::Sys::Plugin::Meta::AllTables;
-
-my %supportedTables = ( alltables => 'DBD::Sys::Plugin::Meta::AllTables', );
-
-sub getSupportedTables() { %supportedTables }
-
-sub getPriority { return 200; }
 
 1;
