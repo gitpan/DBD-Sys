@@ -45,7 +45,11 @@ my $build = Module::Build->new(
                                               'Net::Interface' => '1.0000',
                                               'Socket6'        => 0,
                                             },
-                                recommends => { 'Net::Interface' => '1.0012', },
+                                recommends => {
+                                                'Net::Interface'         => '1.0012',
+                                                'Net::Ifconfig::Wrapper' => '0.11',
+						'NetAddr::IP'            => '4.028',
+                                              },
                               },
             (
               $^O ne 'MSWin32'
