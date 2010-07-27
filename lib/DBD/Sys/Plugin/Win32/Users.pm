@@ -12,7 +12,7 @@ eval {
     $haveWin32pwent = 1;
 };
 
-$VERSION  = "0.101";
+$VERSION  = "0.102";
 @colNames = qw(username passwd uid gid quota comment gcos dir shell expire);
 
 =pod
@@ -77,29 +77,29 @@ Account expiration time, when available
 
 =head1 METHODS
 
-=head2 getTableName
+=head2 get_table_name
 
 Returns 'pwent'.
 
 =cut
 
-sub getTableName() { return 'pwent'; }
+sub get_table_name() { return 'pwent'; }
 
-=head2 getColNames
+=head2 get_col_names
 
 Returns the column names of the table as named in L</Columns>
 
 =cut
 
-sub getColNames() { @colNames }
+sub get_col_names() { @colNames }
 
-=head2 collectData
+=head2 collect_data
 
 Retrieves the data from the password database and put it into fetchable rows.
 
 =cut
 
-sub collectData()
+sub collect_data()
 {
     my @data;
 
@@ -109,7 +109,8 @@ sub collectData()
         while ( my ( $name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire ) =
                 Win32::pwent::getpwent() )
         {
-            push( @data, [ $name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire ] );
+            push( @data,
+                  [ $name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire ] );
         }
         Win32::pwent::endpwent();
     }

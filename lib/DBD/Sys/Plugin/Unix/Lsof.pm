@@ -6,7 +6,7 @@ use vars qw($VERSION @colNames);
 
 use base qw(DBD::Sys::Table);
 
-$VERSION  = "0.101";
+$VERSION  = "0.102";
 @colNames = qw(pid ppid pgrp uid username command filename filetype inode linkcount mountpoint);
 
 =pod
@@ -77,23 +77,23 @@ Mount point of the file system where the file resides
 
 =head1 METHODS
 
-=head2 getTableName
+=head2 get_table_name
 
 Returns 'grent'.
 
 =cut
 
-sub getTableName() { return 'openfiles'; }
+sub get_table_name() { return 'openfiles'; }
 
-=head2 getColNames
+=head2 get_col_names
 
 Returns the column names of the table as named in L</Columns>
 
 =cut
 
-sub getColNames() { @colNames }
+sub get_col_names() { @colNames }
 
-=head2 getAttributes
+=head2 get_attributes
 
 Return the attributes supported by this module:
 
@@ -119,29 +119,39 @@ parameter).
 
 =cut
 
-sub getAttributes() { return qw(uids pids filesys) }
+sub get_attributes() { return qw(uids pids filesys) }
 
-my $havelsof            = 0;
-my $havesysfsmountpoint = 0;
-eval {
-    require Unix::Lsof;
-    $havelsof = 1;
-};
-eval {
-    require Sys::Filesystem::MountPoint;
-    $havesysfsmountpoint = 1;
-};
+my $havelsof;
+my $havesysfsmountpoint;
 
-=head2 collectData
+=head2 collect_data
 
 Retrieves the data from the lsof command and put it into fetchable rows.
 
 =cut
 
-sub collectData()
+sub collect_data()
 {
     my $self = $_[0];
     my @data;
+
+    unless ( defined($havelsof) )
+    {
+        $havelsof = 0;
+        eval {
+            require Unix::Lsof;
+            $havelsof = 1;
+        };
+    }
+
+    unless ( defined($havesysfsmountpoint) )
+    {
+        $havesysfsmountpoint = 0;
+        eval {
+            require Sys::Filesystem::MountPoint;
+            $havesysfsmountpoint = 1;
+        };
+    }
 
     if ($havelsof)
     {
@@ -165,18 +175,27 @@ sub collectData()
         if ( $self->{meta}->{filesys} )
         {
             push( @args,
-                  ref( $self->{meta}->{filesys} ) eq 'ARRAY' ? @{ $self->{meta}->{uids} } : $self->{meta}->{filesys} );
+                  ref( $self->{meta}->{filesys} ) eq 'ARRAY'
+                  ? @{ $self->{meta}->{uids} }
+                  : $self->{meta}->{filesys} );
         }
 
         my ( $output, $error ) = Unix::Lsof::lsof(@args);
         foreach my $pid ( keys %{$output} )
         {
-            my $pinfo = $output->{$pid};
-            my @pfields =
-              @$pinfo{ 'process id', 'parent pid', 'process group id', 'user id', 'login name', 'command name' };
+            my $pinfo   = $output->{$pid};
+            my @pfields = @$pinfo{
+                'process id',
+                'parent pid',
+                'process group id',
+                'user id',
+                'login name',
+                'command name'
+              };
             foreach my $pfile ( @{ $pinfo->{files} } )
             {
-                my @row = ( @pfields, @$pfile{ 'file name', 'file type', 'inode number', 'link count' } );
+                my @row =
+                  ( @pfields, @$pfile{ 'file name', 'file type', 'inode number', 'link count' } );
                 push( @row,
                       $havesysfsmountpoint
                       ? Sys::Filesystem::MountPoint::path_to_mount_point( $pfile->{'file name'} )

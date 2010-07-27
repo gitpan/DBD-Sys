@@ -24,16 +24,8 @@ $VERSION = "0.02";
 
 =cut
 
-my $haveNetIfconfigWrapper = 0;
-my $haveNetAddrIP = 0;
-eval {
-    require Net::Ifconfig::Wrapper;
-    $haveNetIfconfigWrapper = 1;
-};
-eval {
-    require NetAddr::IP;
-    $haveNetAddrIP = 1;
-};
+my $haveNetIfconfigWrapper;
+my $haveNetAddrIP;
 
 @colNames = qw(interface address_family address netmask broadcast hwaddress flags_bin flags);
 
@@ -79,47 +71,65 @@ Comma separated list of the flags.
 
 =head1 METHODS
 
-=head2 getTableName
+=head2 get_table_name
 
 Returns 'netint'.
 
 =cut
 
-sub getTableName() { return 'netint'; }
+sub get_table_name() { return 'netint'; }
 
-=head2 getColNames
+=head2 get_col_names
 
 Returns the column names of the table as named in L</Columns>
 
 =cut
 
-sub getColNames() { @colNames }
+sub get_col_names() { @colNames }
 
-=head2 getPrimaryKey
+=head2 get_primary_key
 
 Returns 'address'.
 
 =cut
 
-sub getPrimaryKey() { return [qw(interface address_family address)]; }
+sub get_primary_key() { return [qw(interface address_family address)]; }
 
-=head2 getPriority
+=head2 get_priority
 
 Returns 200 to let L<DBD::Sys::Plugin::Any::NetInterface> dominate.
 
 =cut
 
-sub getPriority() { return 200; }
+sub get_priority() { return 200; }
 
-=head2 collectData
+=head2 collect_data
 
 Retrieves the data from L<Net::Interface> and put it into fetchable rows.
 
 =cut
 
-sub collectData()
+sub collect_data()
 {
     my @data;
+
+    unless ( defined($haveNetIfconfigWrapper) )
+    {
+        $haveNetIfconfigWrapper = 0;
+        eval {
+            require Net::Ifconfig::Wrapper;
+            $haveNetIfconfigWrapper = 1;
+        };
+    }
+
+    unless ( defined($haveNetAddrIP) )
+    {
+        $haveNetAddrIP = 0;
+        eval {
+            require NetAddr::IP;
+            $haveNetAddrIP = 1;
+        };
+    }
 
     if ($haveNetIfconfigWrapper)
     {
@@ -131,19 +141,19 @@ sub collectData()
             {
                 while ( my ( $addr, $netmask ) = each %{ $ifdata->{inet} } )
                 {
-		    my $bcast;
-		    if( $haveNetAddrIP )
-		    {
-			# XXX let's see what happens when Net::Ifconfig::Wrapper::Ifconfig delivers IPv6 addresses ...
-			my $ip = NetAddr::IP->new( $addr, $netmask ); 
-			$bcast = $ip->broadcast();
-		    }
+                    my $bcast;
+                    if ($haveNetAddrIP)
+                    {
+                        # XXX let's see what happens when Net::Ifconfig::Wrapper::Ifconfig delivers IPv6 addresses ...
+                        my $ip = NetAddr::IP->new( $addr, $netmask );
+                        $bcast = $ip->broadcast();
+                    }
 
                     push(
                           @data,
                           [
-                             $interface, 'inet', $addr, $netmask, $bcast, $ifdata->{ether}, $ifdata->{status},
-                             ( $ifdata->{status} ? '<up>' : '<down>' )
+                             $interface, 'inet', $addr, $netmask, $bcast, $ifdata->{ether},
+                             $ifdata->{status}, ( $ifdata->{status} ? '<up>' : '<down>' )
                           ]
                         );
                 }
@@ -153,8 +163,8 @@ sub collectData()
                 push(
                       @data,
                       [
-                         $interface, undef, undef, undef, undef, $ifdata->{ether}, $ifdata->{status},
-                         ( $ifdata->{status} ? '<up>' : '<down>' )
+                         $interface, undef, undef, undef, undef, $ifdata->{ether},
+                         $ifdata->{status}, ( $ifdata->{status} ? '<up>' : '<down>' )
                       ]
                     );
             }

@@ -6,6 +6,8 @@ use warnings;
 use vars qw($VERSION @colNames);
 use base qw(DBD::Sys::Table);
 
+use Params::Util qw(_ARRAY);
+
 =pod
 
 =head1 NAME
@@ -24,7 +26,7 @@ DBD::Sys::Plugin::Meta::AllTables - DBD::Sys Table Overview
 =cut
 
 @colNames = qw(table_qualifier table_owner table_name table_type remarks);
-$VERSION  = "0.101";
+$VERSION  = "0.102";
 
 =head1 DESCRIPTION
 
@@ -56,34 +58,35 @@ Unused, I<NULL>
 
 =head1 METHODS
 
-=head2 getColNames
+=head2 get_col_names
 
 Returns the column names of the table
 
-=head2 getPriority
+=head2 get_priority
 
 Returns 100 - the lowest priority used by DBD::Sys delivered tables.
 
 =cut
 
-sub getColNames() { @colNames }
-sub getPriority   { return 100; }
+sub get_col_names() { @colNames }
+sub get_priority    { return 100; }
 
-=head2 collectData
+=head2 collect_data
 
 Collects the data for the table using the plugin manager.
-See L<DBD::Sys::PluginManager/getTableDetails> for details.
+See L<DBD::Sys::PluginManager/get_table_details> for details.
 
 =cut
 
-sub collectData()
+sub collect_data()
 {
     my @data;
-    my %tables = $_[0]->{database}->{sys_pluginmgr}->getTableDetails();
+    my %tables = $_[0]->{database}->{sys_pluginmgr}->get_table_details();
 
     while ( my ( $table, $class ) = each(%tables) )
     {
-        push( @data, [ undef, undef, $table, 'TABLE', $class ] );
+        push( @data,
+              [ undef, undef, $table, 'TABLE', _ARRAY($class) ? join( ',', @$class ) : $class ] );
     }
 
     return \@data;

@@ -6,7 +6,7 @@ use vars qw($VERSION @colNames);
 
 use base qw(DBD::Sys::Table);
 
-$VERSION  = "0.101";
+$VERSION  = "0.102";
 @colNames = qw(groupname grpass gid members);
 
 =pod
@@ -49,32 +49,32 @@ Numerical count of the members in this group
 
 =head1 METHODS
 
-=head2 getTableName
+=head2 get_table_name
 
 Returns 'grent'.
 
 =cut
 
-sub getTableName() { return 'grent'; }
+sub get_table_name() { return 'grent'; }
 
-=head2 getColNames
+=head2 get_col_names
 
 Returns the column names of the table as named in L</Columns>
 
 =cut
 
-sub getColNames() { @colNames }
+sub get_col_names() { @colNames }
 
 my $havegrent = 0;
 eval { endgrent(); my @grentry = getgrent(); endgrent(); $havegrent = 1; };
 
-=head2 collectData
+=head2 collect_data
 
 Retrieves the data from the group database and put it into fetchable rows.
 
 =cut
 
-sub collectData()
+sub collect_data()
 {
     my %data;
 
@@ -91,7 +91,8 @@ sub collectData()
                          and ( $row->[2] == $gid )
                          and ( $row->[3] eq $members ) )
                 {
-                    warn "$name is delivered more than once and the group information differs from the first one";
+                    warn
+                      "$name is delivered more than once and the group information differs from the first one";
                 }
             }
             else

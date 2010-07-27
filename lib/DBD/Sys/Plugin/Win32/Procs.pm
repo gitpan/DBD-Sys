@@ -6,7 +6,7 @@ use vars qw($VERSION @colNames);
 
 use base qw(DBD::Sys::Table);
 
-$VERSION  = "0.101";
+$VERSION  = "0.102";
 @colNames = qw(pid ppid uid sess cmndline start fulltime virtsize fname state threads);
 
 =pod
@@ -77,41 +77,46 @@ Amount of threads used by this process
 
 =cut
 
-my ( $have_win32_process_info, $have_win32_process_commandline ) = ( 0, 0 );
-eval { require Win32::Process::Info;        $have_win32_process_info        = 1; };
-eval { require Win32::Process::CommandLine; $have_win32_process_commandline = 1; };
-
-Win32::Process::Info->import( 'NT', 'WMI' ) if ($have_win32_process_info);
-Win32::Process::CommandLine->import() if ($have_win32_process_commandline);
+my ( $have_win32_process_info, $have_win32_process_commandline );
 
 =head1 METHODS
 
-=head2 getColNames
+=head2 get_col_names
 
 Returns the column names of the table as named in L</Columns>
 
 =cut
 
-sub getColNames() { @colNames }
+sub get_col_names() { @colNames }
 
-=head2 getPrimaryKey
+=head2 get_primary_key
 
 Returns 'pid' - which is the process identifier.
 
 =cut
 
-sub getPrimaryKey() { return 'pid'; }
+sub get_primary_key() { return 'pid'; }
 
-=head2 collectData
+=head2 collect_data
 
 Retrieves the data from L<Win32::Process::Info> and put it into fetchable rows.
 
 =cut
 
-sub collectData
+sub collect_data
 {
     my $self = $_[0];
     my @data;
+
+    unless ( defined($have_win32_process_info) )
+    {
+        ( $have_win32_process_info, $have_win32_process_commandline ) = ( 0, 0 );
+        eval { require Win32::Process::Info;        $have_win32_process_info        = 1; };
+        eval { require Win32::Process::CommandLine; $have_win32_process_commandline = 1; };
+
+        Win32::Process::Info->import( 'NT', 'WMI' ) if ($have_win32_process_info);
+        Win32::Process::CommandLine->import() if ($have_win32_process_commandline);
+    }
 
     if ($have_win32_process_info)
     {
@@ -133,7 +138,10 @@ sub collectData
                      $procInfo->{SessionId} || 0,
                      $cli || $procInfo->{Name} || "<dead>",
                      $procInfo->{CreationDate},
-                     int( ( $procInfo->{KernelModeTime} || 0 ) + ( $procInfo->{UserModeTime} || 0 ) + .499 ),
+                     int(
+                          ( $procInfo->{KernelModeTime} || 0 ) +
+                            ( $procInfo->{UserModeTime} || 0 ) + .499
+                        ),
                      $procInfo->{VirtualSize} || $procInfo->{WorkingSetSize},
                      $procInfo->{ExecutablePath},
                      $procInfo->{_status} || $procInfo->{Status} || $procInfo->{ExecutionState},

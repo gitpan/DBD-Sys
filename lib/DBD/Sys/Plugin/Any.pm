@@ -7,7 +7,7 @@ use vars qw($VERSION);
 
 use base qw(DBD::Sys::Plugin);
 
-$VERSION = "0.101";
+$VERSION = "0.102";
 
 #################### main pod documentation start ###################
 
@@ -52,14 +52,14 @@ L<DBD::Sys::Plugin::Any::NetInterface> for details.
 
 =head1 METHODS
 
-=head2 getPriority
+=head2 get_priority
 
 Delivers the default priority for the tables for any operating system,
 which is 100.
 
 =cut
 
-sub getPriority() { return 100; }
+sub get_priority() { return 100; }
 
 =head1 BUGS & LIMITATIONS
 

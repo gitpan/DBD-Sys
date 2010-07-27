@@ -24,15 +24,9 @@ DBD::Sys::Plugin::Any::FileSysDf - provides a table containing the free space of
 
 =cut
 
-my $haveFilesysDf = 0;
-eval {
-    require Sys::Filesystem;
-    require Filesys::DfPortable;
-    $haveFilesysDf = 1;
-};
-Filesys::DfPortable->import() if ($haveFilesysDf);
+my $haveFilesysDf;
 
-$VERSION  = "0.101";
+$VERSION  = "0.102";
 @colNames = qw(mountpoint blocks bfree bavail bused bper files ffree favail fused fper);
 
 =head1 DESCRIPTION
@@ -98,15 +92,15 @@ See the information for the C<bper> column.
 
 =head1 METHODS
 
-=head2 getColNames
+=head2 get_col_names
 
 Returns the column names of the table as named in L</Columns>
 
 =cut
 
-sub getColNames() { return @colNames }
+sub get_col_names() { return @colNames }
 
-=head2 getAttributes
+=head2 get_attributes
 
 Return the attributes supported by this module:
 
@@ -119,9 +113,9 @@ This defaults to 1.
 
 =cut
 
-sub getAttributes() { return qw(blocksize) }
+sub get_attributes() { return qw(blocksize) }
 
-=head2 collectData
+=head2 collect_data
 
 Retrieves the mountpoints of mounted file systems from L<Sys::Filesystem>
 and determine the free space on their devices using L<Filesys::DfPortable>.
@@ -129,10 +123,21 @@ The mountpoint and the free space information are put in fetchable rows.
 
 =cut
 
-sub collectData()
+sub collect_data()
 {
     my $self = $_[0];
     my @data;
+
+    unless ( defined($haveFilesysDf) )
+    {
+        $haveFilesysDf = 0;
+        eval {
+            require Sys::Filesystem;
+            require Filesys::DfPortable;
+            $haveFilesysDf = 1;
+        };
+        Filesys::DfPortable->import() if ($haveFilesysDf);
+    }
 
     if ($haveFilesysDf)
     {
@@ -148,8 +153,11 @@ sub collectData()
             if ( defined($df) )
             {
                 @row = (
-                        $fs->mount_point($filesys),
-                        @$df{ 'blocks', 'bfree', 'bavail', 'bused', 'per', 'files', 'ffree', 'favail', 'fused', 'fper' }
+                         $fs->mount_point($filesys),
+                         @$df{
+                             'blocks', 'bfree',  'bavail', 'bused', 'per', 'files',
+                             'ffree',  'favail', 'fused',  'fper'
+                           }
                        );
             }
             else

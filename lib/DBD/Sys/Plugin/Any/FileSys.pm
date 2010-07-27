@@ -24,13 +24,9 @@ DBD::Sys::Plugin::Any::FileSys - provides a table containing file systems
 
 =cut
 
-my $haveSysFs = 0;
-eval {
-    require Sys::Filesystem;
-    $haveSysFs = 1;
-};
+my $haveSysFs;
 
-$VERSION  = "0.101";
+$VERSION  = "0.102";
 @colNames = qw(mountpoint mounted label volume device special type options);
 
 =head1 DESCRIPTION
@@ -76,31 +72,40 @@ user and group settings and permissions.
 
 =head1 METHODS
 
-=head2 getColNames
+=head2 get_col_names
 
 Returns the column names of the table as named in L</Columns>
 
 =cut
 
-sub getColNames() { @colNames }
+sub get_col_names() { @colNames }
 
-=head2 getTableName
+=head2 get_table_name
 
 Returns 'filesystems'
 
 =cut
 
-sub getTableName() { return 'filesystems'; }
+sub get_table_name() { return 'filesystems'; }
 
-=head2 collectData
+=head2 collect_data
 
 Retrieves the data from L<Sys::Filesystem> and put it into fetchable rows.
 
 =cut
 
-sub collectData()
+sub collect_data()
 {
     my @data;
+
+    unless ( defined($haveSysFs) )
+    {
+        $haveSysFs = 0;
+        eval {
+            require Sys::Filesystem;
+            $haveSysFs = 1;
+        };
+    }
 
     if ($haveSysFs)
     {

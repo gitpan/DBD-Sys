@@ -31,7 +31,7 @@ use Module::Pluggable
   inner       => 0,
   only        => qr/^DBD::Sys::Plugin::\p{Word}+$/;
 
-$VERSION = "0.101";
+$VERSION = "0.102";
 
 =head1 DESCRIPTION
 
@@ -66,7 +66,7 @@ sub new
     foreach my $plugin ( $self->plugins() )
     {
         croak "Invalid plugin: $plugin" unless ( $plugin->isa('DBD::Sys::Plugin') );
-        my %pluginTables = $plugin->getSupportedTables();
+        my %pluginTables = $plugin->get_supported_tables();
         foreach my $pluginTable ( keys %pluginTables )
         {
             my $pte = lc $pluginTable;
@@ -94,8 +94,9 @@ sub new
 
             foreach my $pluginClass (@pluginClasses)
             {
-                $pluginClass->can('getAttributes')
-                  and push( @tableAttrs, map { join( '_', 'sys', $pte, $_ ) } $pluginClass->getAttributes() );
+                $pluginClass->can('get_attributes')
+                  and push( @tableAttrs,
+                            map { join( '_', 'sys', $pte, $_ ) } $pluginClass->get_attributes() );
             }
         }
     }
@@ -105,19 +106,19 @@ sub new
     return $self;
 }
 
-=head2 getTableList
+=head2 get_table_list
 
 Returns the list of the known table names. It's intended for internal use
 only, so be aware that the API might change!
 
 =cut
 
-sub getTableList
+sub get_table_list
 {
     return keys %{ $_[0]->{tables2classes} };
 }
 
-=head2 getTableDetails
+=head2 get_table_details
 
 Returns a hash containing the table names and the table implementor
 classes as value. It's intended for internal use only, so be aware
@@ -125,12 +126,12 @@ that the API might change!
 
 =cut
 
-sub getTableDetails
+sub get_table_details
 {
     return %{ clone( $_[0]->{tables2classes} ) };
 }
 
-=head2 getTablesAttrs
+=head2 get_tables_attrs
 
 Returns a C<< $dbh->{sys_valid_attrs} >> compatible hash map of valid
 attributes of the loaded tables. It's intended for internal use only,
@@ -138,14 +139,14 @@ so be aware that the API might change!
 
 =cut
 
-sub getTablesAttrs
+sub get_tables_attrs
 {
     my $self = $_[0];
     my %attrMap = map { $_ => 1 } @{ $self->{tables_attrs} };
     return \%attrMap;
 }
 
-=head2 getTable
+=head2 get_table
 
 Instantiates the appropriate table class for a given table name.
 If multiple implementators for the specified table are known, a
@@ -156,7 +157,7 @@ internal use only, so be aware that the API might change!
 
 =cut
 
-sub getTable
+sub get_table
 {
     my ( $self, $tableName, $attrs ) = @_;
     $tableName = lc $tableName;
